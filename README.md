@@ -6,7 +6,7 @@
 
 ## 📋 Descripción
 
-Esta herramienta permite a **BANASUPRO** consolidar inventarios procedentes de hasta 6 bodegas diferentes en un único reporte centralizado. Combina un catálogo maestro de productos con inventarios individuales de cada bodega, generando automáticamente un consolidado con totales por producto y bodega.
+Esta herramienta permite a **negocio** consolidar inventarios procedentes de hasta 6 bodegas diferentes en un único reporte centralizado. Combina un catálogo maestro de productos con inventarios individuales de cada bodega, generando automáticamente un consolidado con totales por producto y bodega.
 
 ### Beneficios Principales
 - **Consolidación automática** de múltiples inventarios
