@@ -51,7 +51,10 @@ def read_table(file_path: str) -> pd.DataFrame:
         try:
             return pd.read_csv(file_path, encoding="utf-8-sig")
         except Exception:
-            return pd.read_csv(file_path, encoding="latin-1")
+            try:
+                return pd.read_csv(file_path, encoding="latin-1")
+            except Exception as e:
+                raise ValueError(f"No se pudo leer el archivo CSV. Verifica el formato y codificación: {str(e)}")
     raise ValueError("Formato no soportado. Usa archivos .xlsx, .xls o .csv")
 
 
@@ -116,7 +119,7 @@ class InventoryConsolidatorApp(tk.Tk):
         self.consolidated_df = None
 
         self.style = ttk.Style(self)
-        self.configure(bg="#f3f6fb")
+        self.configure(bg="#f0f7ff")
         try:
             self.style.theme_use("clam")
         except Exception:
@@ -125,38 +128,81 @@ class InventoryConsolidatorApp(tk.Tk):
         self._configure_styles()
         self._build_ui()
 
+    def _create_button(self, parent, text, command, is_primary=True):
+        """Crea un botón personalizado con azul eléctrico y efecto 3D"""
+        if is_primary:
+            btn = tk.Button(
+                parent, text=text, command=command,
+                bg="#0066ff", fg="#ffffff", font=("Segoe UI", 10, "bold"),
+                relief="raised", borderwidth=2, padx=12, pady=8,
+                activebackground="#0052cc", activeforeground="#ffffff",
+                cursor="hand2"
+            )
+        else:
+            btn = tk.Button(
+                parent, text=text, command=command,
+                bg="#e6f2ff", fg="#0052cc", font=("Segoe UI", 9),
+                relief="raised", borderwidth=2, padx=10, pady=6,
+                activebackground="#cce5ff", activeforeground="#0052cc",
+                cursor="hand2"
+            )
+        return btn
+
     def _configure_styles(self):
-        self.style.configure("Title.TLabel", font=("Segoe UI", 16, "bold"), background="#f3f6fb", foreground="#0f172a")
-        self.style.configure("Card.TFrame", background="#ffffff")
-        self.style.configure("Muted.TLabel", background="#f3f6fb", foreground="#475569", font=("Segoe UI", 9))
-        self.style.configure("CardTitle.TLabel", background="#ffffff", foreground="#0f172a", font=("Segoe UI", 11, "bold"))
-        self.style.configure("CardValue.TLabel", background="#ffffff", foreground="#0f172a", font=("Segoe UI", 18, "bold"))
-        self.style.configure("Treeview", rowheight=24, font=("Segoe UI", 9))
-        self.style.configure("Treeview.Heading", font=("Segoe UI", 9, "bold"))
-        self.style.configure("TNotebook.Tab", padding=(12, 8), font=("Segoe UI", 10, "bold"))
-        self.style.configure("Primary.TButton", font=("Segoe UI", 10, "bold"))
+        self.style.configure("Title.TLabel", font=("Segoe UI", 16, "bold"), background="#f0f7ff", foreground="#001f5c")
+        self.style.configure("Card.TFrame", background="#ffffff", borderwidth=2, relief="raised")
+        self.style.configure("Muted.TLabel", background="#f0f7ff", foreground="#1e3a8a", font=("Segoe UI", 9))
+        self.style.configure("CardTitle.TLabel", background="#ffffff", foreground="#0066ff", font=("Segoe UI", 10, "bold"))
+        self.style.configure("CardValue.TLabel", background="#ffffff", foreground="#0052cc", font=("Segoe UI", 20, "bold"))
+        self.style.configure("Separator.TFrame", background="#0066ff", height=2)
+        self.style.configure("Section.TLabel", font=("Segoe UI", 10, "bold"), background="#f0f7ff", foreground="#001f5c")
+        self.style.configure("Help.TLabel", background="#f0f7ff", foreground="#1e3a8a", font=("Segoe UI", 8))
+        self.style.configure("Treeview", rowheight=28, font=("Segoe UI", 9), background="#ffffff", fieldbackground="#ffffff")
+        self.style.configure("Treeview.Heading", font=("Segoe UI", 9, "bold"), background="#e6f2ff", foreground="#0052cc")
+        self.style.map("Treeview", background=[("selected", "#0066ff")], foreground=[("selected", "#ffffff")])
+        self.style.configure("TNotebook", background="#f0f7ff", borderwidth=0)
+        self.style.configure("TNotebook.Tab", padding=(20, 12), font=("Segoe UI", 10, "bold"), background="#e6f2ff", foreground="#001f5c")
+        self.style.map("TNotebook.Tab", background=[("selected", "#0066ff")], foreground=[("selected", "#ffffff")])
+        self.style.configure("Primary.TButton", font=("Segoe UI", 10, "bold"), padding=8, background="#0066ff", foreground="#ffffff", borderwidth=2, relief="raised")
+        self.style.map("Primary.TButton", background=[("active", "#0052cc"), ("pressed", "#003d99"), ("!active", "#0066ff")], foreground=[("active", "#ffffff"), ("!active", "#ffffff")])
+        self.style.configure("Secondary.TButton", font=("Segoe UI", 9), padding=6, background="#e6f2ff", foreground="#0052cc", borderwidth=2, relief="raised")
+        self.style.map("Secondary.TButton", background=[("active", "#cce5ff"), ("pressed", "#99ccff"), ("!active", "#e6f2ff")], foreground=[("active", "#0052cc"), ("!active", "#0052cc")])
 
     def _build_ui(self):
-        top = ttk.Frame(self, padding=14)
+        # ENCABEZADO TIPO DASHBOARD
+        header = tk.Frame(self, bg="#0052cc", height=80)
+        header.pack(fill="x", side="top")
+        header.pack_propagate(False)
+        
+        header_content = tk.Frame(header, bg="#0052cc")
+        header_content.pack(fill="both", expand=True, padx=24, pady=16)
+        
+        tk.Label(header_content, text=APP_TITLE, font=("Segoe UI", 24, "bold"), bg="#0052cc", fg="#ffffff").pack(anchor="w")
+        tk.Label(
+            header_content,
+            text="Carga catálogo y hasta 6 inventarios; consolida existencias por bodega y exporta a Excel.",
+            font=("Segoe UI", 9),
+            bg="#0052cc",
+            fg="#e0e7ff"
+        ).pack(anchor="w", pady=(4, 0))
+        
+        # CONTENEDOR PRINCIPAL
+        top = tk.Frame(self, bg="#f0f7ff")
         top.pack(fill="both", expand=True)
 
-        header = ttk.Frame(top)
-        header.pack(fill="x", pady=(0, 10))
-        ttk.Label(header, text=APP_TITLE, style="Title.TLabel").pack(anchor="w")
-        ttk.Label(
-            header,
-            text="Carga catálogo y hasta 6 inventarios; consolida existencias por bodega y exporta a Excel.",
-            style="Muted.TLabel",
-        ).pack(anchor="w", pady=(4, 0))
-
+        # TARJETAS DE RESUMEN
         self._build_summary_cards(top)
 
-        self.notebook = ttk.Notebook(top)
-        self.notebook.pack(fill="both", expand=True, pady=(10, 0))
+        # NOTEBOOK CON PESTANAS
+        notebook_frame = tk.Frame(top, bg="#f0f7ff")
+        notebook_frame.pack(fill="both", expand=True, padx=24, pady=(0, 24))
+        
+        self.notebook = ttk.Notebook(notebook_frame)
+        self.notebook.pack(fill="both", expand=True)
 
-        self.tab_catalog = ttk.Frame(self.notebook, padding=12)
-        self.tab_inventories = ttk.Frame(self.notebook, padding=12)
-        self.tab_result = ttk.Frame(self.notebook, padding=12)
+        self.tab_catalog = tk.Frame(self.notebook, bg="#ffffff")
+        self.tab_inventories = tk.Frame(self.notebook, bg="#ffffff")
+        self.tab_result = tk.Frame(self.notebook, bg="#ffffff")
 
         self.notebook.add(self.tab_catalog, text="Catálogo")
         self.notebook.add(self.tab_inventories, text="Inventarios")
@@ -166,14 +212,20 @@ class InventoryConsolidatorApp(tk.Tk):
         self._build_inventories_tab()
         self._build_result_tab()
 
-        bottom = ttk.Frame(top)
-        bottom.pack(fill="x", pady=(8, 0))
+        # BARRA DE ESTADO
+        bottom = tk.Frame(top, bg="#ffffff", height=40)
+        bottom.pack(fill="x", side="bottom")
+        bottom.pack_propagate(False)
+        
+        bottom_content = tk.Frame(bottom, bg="#ffffff")
+        bottom_content.pack(fill="both", expand=True, padx=24, pady=8)
+        
         self.status_var = tk.StringVar(value="Listo para cargar archivos.")
-        ttk.Label(bottom, textvariable=self.status_var, style="Muted.TLabel").pack(side="left")
+        tk.Label(bottom_content, textvariable=self.status_var, font=("Segoe UI", 9), bg="#ffffff", fg="#64748b").pack(side="left")
 
     def _build_summary_cards(self, parent):
-        cards = ttk.Frame(parent)
-        cards.pack(fill="x")
+        cards = tk.Frame(parent, bg="#f0f7ff")
+        cards.pack(fill="x", padx=24, pady=(16, 20))
 
         self.catalog_count_var = tk.StringVar(value="0")
         self.files_count_var = tk.StringVar(value="0")
@@ -188,75 +240,150 @@ class InventoryConsolidatorApp(tk.Tk):
         ]
 
         for idx, (title, value_var) in enumerate(card_data):
-            card = ttk.Frame(cards, style="Card.TFrame", padding=14)
-            card.grid(row=0, column=idx, sticky="nsew", padx=(0 if idx == 0 else 8, 0))
+            card = tk.Frame(cards, bg="#ffffff", relief="flat", bd=0, highlightthickness=1, highlightbackground="#e0e7ff")
+            card.grid(row=0, column=idx, sticky="nsew", padx=8, pady=0)
             cards.columnconfigure(idx, weight=1)
-            ttk.Label(card, text=title, style="CardTitle.TLabel").pack(anchor="w")
-            ttk.Label(card, textvariable=value_var, style="CardValue.TLabel").pack(anchor="w", pady=(8, 0))
+            
+            inner = tk.Frame(card, bg="#ffffff")
+            inner.pack(fill="both", expand=True, padx=16, pady=16)
+            
+            tk.Label(inner, text=title, font=("Segoe UI", 9, "bold"), bg="#ffffff", fg="#64748b").pack(anchor="w", pady=(0, 12))
+            tk.Label(inner, textvariable=value_var, font=("Segoe UI", 28, "bold"), bg="#ffffff", fg="#0052cc").pack(anchor="w", pady=(8, 0))
 
     def _build_catalog_tab(self):
-        top_actions = ttk.Frame(self.tab_catalog)
-        top_actions.pack(fill="x", pady=(0, 10))
-
-        ttk.Button(top_actions, text="Cargar catálogo", style="Primary.TButton", command=self.load_catalog).pack(side="left")
-        ttk.Button(top_actions, text="Exportar plantilla catálogo", command=self.export_catalog_template).pack(side="left", padx=8)
-
+        # PANEL IZQUIERDO - ACCIONES
+        left_panel = tk.Frame(self.tab_catalog, bg="#f8f9fa", width=280)
+        left_panel.pack(side="left", fill="y", padx=12, pady=12)
+        left_panel.pack_propagate(False)
+        
+        tk.Label(left_panel, text="Acciones", font=("Segoe UI", 12, "bold"), bg="#f8f9fa", fg="#001f5c").pack(anchor="w", padx=12, pady=(12, 16))
+        
+        btn_container = tk.Frame(left_panel, bg="#f8f9fa")
+        btn_container.pack(fill="x", padx=12, pady=(0, 16))
+        
+        self._create_button(btn_container, "Cargar Catalogo", self.load_catalog, True).pack(fill="x", pady=6)
+        self._create_button(btn_container, "Exportar Plantilla", self.export_catalog_template, False).pack(fill="x", pady=6)
+        
+        tk.Frame(left_panel, bg="#e0e7ff", height=1).pack(fill="x", padx=12, pady=12)
+        
+        tk.Label(left_panel, text="Requerimientos", font=("Segoe UI", 10, "bold"), bg="#f8f9fa", fg="#001f5c").pack(anchor="w", padx=12, pady=(0, 8))
+        
         tip = (
-            "El catálogo debe incluir al menos: codigo y proveedor. "
-            "También puede traer descripcion y unidad como apoyo."
+            "El catalogo debe incluir:\n"
+            "- Codigo (obligatorio)\n"
+            "- Proveedor (obligatorio)\n"
+            "- Descripcion (opcional)\n"
+            "- Unidad (opcional)"
         )
-        ttk.Label(self.tab_catalog, text=tip, style="Muted.TLabel").pack(anchor="w", pady=(0, 8))
-
-        self.catalog_info_var = tk.StringVar(value="No hay catálogo cargado.")
-        ttk.Label(self.tab_catalog, textvariable=self.catalog_info_var).pack(anchor="w", pady=(0, 8))
-
-        self.catalog_tree = self._create_tree(self.tab_catalog)
+        tk.Label(left_panel, text=tip, font=("Segoe UI", 8), bg="#f8f9fa", fg="#64748b", justify="left").pack(anchor="nw", padx=12)
+        
+        # PANEL DERECHO - TABLA
+        right_panel = tk.Frame(self.tab_catalog, bg="#ffffff")
+        right_panel.pack(side="right", fill="both", expand=True, padx=12, pady=12)
+        
+        header_info = tk.Frame(right_panel, bg="#ffffff")
+        header_info.pack(fill="x", pady=(0, 12))
+        tk.Label(header_info, text="Contenido del Catalogo", font=("Segoe UI", 12, "bold"), bg="#ffffff", fg="#001f5c").pack(anchor="w")
+        
+        self.catalog_info_var = tk.StringVar(value="No hay catalogo cargado.")
+        tk.Label(header_info, textvariable=self.catalog_info_var, font=("Segoe UI", 9), bg="#ffffff", fg="#64748b").pack(anchor="w", pady=(4, 0))
+        
+        self.catalog_tree = self._create_tree(right_panel)
         self.catalog_tree.pack(fill="both", expand=True)
 
     def _build_inventories_tab(self):
-        actions = ttk.Frame(self.tab_inventories)
-        actions.pack(fill="x", pady=(0, 10))
-
-        ttk.Button(actions, text="Agregar inventario", style="Primary.TButton", command=self.load_inventory).pack(side="left")
-        ttk.Button(actions, text="Quitar seleccionado", command=self.remove_selected_inventory).pack(side="left", padx=8)
-        ttk.Button(actions, text="Limpiar lista", command=self.clear_inventories).pack(side="left")
-        ttk.Button(actions, text="Exportar plantilla inventario", command=self.export_inventory_template).pack(side="left", padx=8)
-        ttk.Button(actions, text="Consolidar archivos", style="Primary.TButton", command=self.consolidate).pack(side="right")
-
-        ttk.Label(
-            self.tab_inventories,
-            text="Cada archivo debe traer: codigo, descripcion, unidad y existencias bodega. Se permite .xlsx, .xls y .csv.",
-            style="Muted.TLabel",
-        ).pack(anchor="w", pady=(0, 8))
-
-        columns = ("bodega", "archivo", "filas", "columnas")
-        self.inventories_tree = ttk.Treeview(self.tab_inventories, columns=columns, show="headings", height=8)
-        for col, width in [("bodega", 200), ("archivo", 360), ("filas", 90), ("columnas", 240)]:
+        # PANEL IZQUIERDO - GESTION DE BODEGAS
+        left_panel = tk.Frame(self.tab_inventories, bg="#f8f9fa", width=320)
+        left_panel.pack(side="left", fill="both", padx=12, pady=12)
+        left_panel.pack_propagate(False)
+        
+        tk.Label(left_panel, text="Gestion de Bodegas", font=("Segoe UI", 12, "bold"), bg="#f8f9fa", fg="#001f5c").pack(anchor="w", padx=12, pady=(12, 16))
+        
+        btn_container = tk.Frame(left_panel, bg="#f8f9fa")
+        btn_container.pack(fill="x", padx=12, pady=(0, 12))
+        
+        self._create_button(btn_container, "Agregar Bodega", self.load_inventory, True).pack(fill="x", pady=6)
+        self._create_button(btn_container, "Quitar Seleccionada", self.remove_selected_inventory, False).pack(fill="x", pady=6)
+        self._create_button(btn_container, "Limpiar Lista", self.clear_inventories, False).pack(fill="x", pady=6)
+        self._create_button(btn_container, "Exportar Plantilla", self.export_inventory_template, False).pack(fill="x", pady=6)
+        
+        tk.Frame(left_panel, bg="#e0e7ff", height=1).pack(fill="x", padx=12, pady=12)
+        
+        tk.Label(left_panel, text="Bodegas Cargadas", font=("Segoe UI", 10, "bold"), bg="#f8f9fa", fg="#001f5c").pack(anchor="w", padx=12, pady=(0, 8))
+        
+        columns = ("bodega", "archivo", "filas")
+        self.inventories_tree = ttk.Treeview(left_panel, columns=columns, show="headings", height=8)
+        for col, width in [("bodega", 120), ("archivo", 140), ("filas", 50)]:
             self.inventories_tree.heading(col, text=col.title())
             self.inventories_tree.column(col, width=width, anchor="w")
-        self.inventories_tree.pack(fill="x", pady=(0, 10))
-
-        rename_frame = ttk.LabelFrame(self.tab_inventories, text="Nombre de bodega del archivo seleccionado", padding=10)
-        rename_frame.pack(fill="x", pady=(0, 10))
+        self.inventories_tree.pack(fill="both", expand=True, pady=(0, 12))
+        
+        tk.Frame(left_panel, bg="#e0e7ff", height=1).pack(fill="x", padx=12, pady=12)
+        
+        tk.Label(left_panel, text="Editar Nombre", font=("Segoe UI", 10, "bold"), bg="#f8f9fa", fg="#001f5c").pack(anchor="w", padx=12, pady=(0, 8))
+        
+        rename_content = tk.Frame(left_panel, bg="#f8f9fa")
+        rename_content.pack(fill="x", padx=12, pady=(0, 12))
+        
+        tk.Label(rename_content, text="Nombre:", font=("Segoe UI", 9), bg="#f8f9fa", fg="#001f5c").pack(anchor="w", pady=(0, 4))
         self.bodega_name_var = tk.StringVar()
-        ttk.Entry(rename_frame, textvariable=self.bodega_name_var).pack(side="left", fill="x", expand=True)
-        ttk.Button(rename_frame, text="Actualizar nombre", command=self.rename_selected_inventory).pack(side="left", padx=8)
-
-        ttk.Label(self.tab_inventories, text="Vista previa del archivo seleccionado", style="Muted.TLabel").pack(anchor="w", pady=(0, 6))
-        self.inventory_preview_tree = self._create_tree(self.tab_inventories)
+        
+        entry_style = tk.Entry(rename_content, textvariable=self.bodega_name_var, font=("Segoe UI", 10), bg="#ffffff", fg="#001f5c", relief="solid", bd=1)
+        entry_style.pack(fill="x", pady=(0, 8))
+        
+        self._create_button(rename_content, "Actualizar Nombre", self.rename_selected_inventory, True).pack(fill="x")
+        
+        # PANEL DERECHO - VISTA PREVIA
+        right_panel = tk.Frame(self.tab_inventories, bg="#ffffff")
+        right_panel.pack(side="right", fill="both", expand=True, padx=12, pady=12)
+        
+        tk.Label(right_panel, text="Vista Previa del Inventario", font=("Segoe UI", 12, "bold"), bg="#ffffff", fg="#001f5c").pack(anchor="w", pady=(0, 12))
+        
+        self.inventory_preview_tree = self._create_tree(right_panel)
         self.inventory_preview_tree.pack(fill="both", expand=True)
         self.inventories_tree.bind("<<TreeviewSelect>>", self.on_inventory_select)
 
     def _build_result_tab(self):
-        actions = ttk.Frame(self.tab_result)
-        actions.pack(fill="x", pady=(0, 10))
-        ttk.Button(actions, text="Exportar consolidado a Excel", style="Primary.TButton", command=self.export_consolidated).pack(side="left")
-        ttk.Button(actions, text="Guardar CSV", command=self.export_consolidated_csv).pack(side="left", padx=8)
-
-        self.result_info_var = tk.StringVar(value="Aún no se ha generado consolidado.")
-        ttk.Label(self.tab_result, textvariable=self.result_info_var).pack(anchor="w", pady=(0, 8))
-
-        self.result_tree = self._create_tree(self.tab_result)
+        # PANEL IZQUIERDO - EXPORTACION
+        left_panel = tk.Frame(self.tab_result, bg="#f8f9fa", width=280)
+        left_panel.pack(side="left", fill="y", padx=12, pady=12)
+        left_panel.pack_propagate(False)
+        
+        tk.Label(left_panel, text="Exportacion", font=("Segoe UI", 12, "bold"), bg="#f8f9fa", fg="#001f5c").pack(anchor="w", padx=12, pady=(12, 16))
+        
+        btn_container = tk.Frame(left_panel, bg="#f8f9fa")
+        btn_container.pack(fill="x", padx=12, pady=(0, 16))
+        
+        self._create_button(btn_container, "Descargar Excel", self.export_consolidated, True).pack(fill="x", pady=6)
+        self._create_button(btn_container, "Descargar CSV", self.export_consolidated_csv, False).pack(fill="x", pady=6)
+        
+        tk.Frame(left_panel, bg="#e0e7ff", height=1).pack(fill="x", padx=12, pady=12)
+        
+        tk.Label(left_panel, text="Acerca del Consolidado", font=("Segoe UI", 10, "bold"), bg="#f8f9fa", fg="#001f5c").pack(anchor="w", padx=12, pady=(0, 8))
+        
+        info_text = (
+            "El consolidado incluye:\n\n"
+            "- Codigos de producto\n"
+            "- Proveedores\n"
+            "- Descripciones\n"
+            "- Unidades de medida\n"
+            "- Existencias por bodega\n"
+            "- Totales por producto"
+        )
+        tk.Label(left_panel, text=info_text, font=("Segoe UI", 8), bg="#f8f9fa", fg="#64748b", justify="left").pack(anchor="nw", padx=12)
+        
+        # PANEL DERECHO - TABLA DE RESULTADOS
+        right_panel = tk.Frame(self.tab_result, bg="#ffffff")
+        right_panel.pack(side="right", fill="both", expand=True, padx=12, pady=12)
+        
+        header_frame = tk.Frame(right_panel, bg="#ffffff")
+        header_frame.pack(fill="x", pady=(0, 12))
+        tk.Label(header_frame, text="Consolidado de Inventarios", font=("Segoe UI", 12, "bold"), bg="#ffffff", fg="#001f5c").pack(anchor="w")
+        
+        self.result_info_var = tk.StringVar(value="Aun no se ha generado consolidado.")
+        tk.Label(header_frame, textvariable=self.result_info_var, font=("Segoe UI", 9), bg="#ffffff", fg="#64748b").pack(anchor="w", pady=(4, 0))
+        
+        self.result_tree = self._create_tree(right_panel)
         self.result_tree.pack(fill="both", expand=True)
 
     def _create_tree(self, parent):
@@ -283,7 +410,10 @@ class InventoryConsolidatorApp(tk.Tk):
         self.columns_count_var.set("0" if self.consolidated_df is None else str(len(self.consolidated_df.columns)))
 
     def fill_tree_from_df(self, tree_frame, df: pd.DataFrame):
-        tree = tree_frame.winfo_children()[0]
+        children = tree_frame.winfo_children()
+        if not children:
+            return
+        tree = children[0]
         for item in tree.get_children():
             tree.delete(item)
 
@@ -665,9 +795,11 @@ class InventoryConsolidatorApp(tk.Tk):
                 }
             )
             df.to_excel(file_path, index=False)
+            self.set_status("Plantilla de catálogo exportada.")
             messagebox.showinfo("Plantilla creada", f"Plantilla guardada en:\n{file_path}")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror("Error al exportar plantilla", f"No se pudo guardar la plantilla: {str(e)}")
+            self.set_status("Error al exportar plantilla de catálogo.")
 
     def export_inventory_template(self):
         file_path = filedialog.asksaveasfilename(
@@ -689,9 +821,11 @@ class InventoryConsolidatorApp(tk.Tk):
                 }
             )
             df.to_excel(file_path, index=False)
+            self.set_status("Plantilla de inventario exportada.")
             messagebox.showinfo("Plantilla creada", f"Plantilla guardada en:\n{file_path}")
         except Exception as e:
-            messagebox.showerror("Error", str(e))
+            messagebox.showerror("Error al exportar plantilla", f"No se pudo guardar la plantilla: {str(e)}")
+            self.set_status("Error al exportar plantilla de inventario.")
 
 
 def main():
